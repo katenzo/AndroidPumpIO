@@ -105,7 +105,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         clientId = sharedPref.getString(getString(R.string.client_id), clientId);
 
         if ("".equals(clientId)) {
-            clientId = "_OcSJ3Wi8BVDwIrr6wPdqA";
+            clientId = "dr2bpvpTraVvyiDSN64rJQ";
         }
 
         String clientSecret = "";
@@ -113,7 +113,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
 
         if ("".equals(clientSecret)) {
-            clientSecret = "ZLAwmRasc5JQjemXi2piSZ36u1SMLGKXWRomOHlGRMg";
+            clientSecret = "_btRT79RCgddPd6XB6Ve4Bs-hY61-bhiVtcbz6u1Qpo";
         }
 
         RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(clientId, clientSecret);

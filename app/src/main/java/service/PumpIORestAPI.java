@@ -2,6 +2,7 @@ package service;
 
 
 import model.OAuthToken;
+import model.post.PostResponse;
 import model.register.Login;
 import model.register.RegisterUser;
 import model.register.RegisterUserResponse;
@@ -37,7 +38,7 @@ public interface PumpIORestAPI {
     Login mainLogin(@Field("nickname") String nickname, @Field("password") String password);
 
     @POST("/api/user/{nickname}/feed")
-    void postNote(@Path("nickname") String nickname ,@Body PostNote postNote);
+    PostResponse postNote(@Path("nickname") String nickname ,@Body PostNote postNote);
 
 
 }

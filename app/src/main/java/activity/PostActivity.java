@@ -12,12 +12,20 @@ import android.widget.TextView;
 
 import com.katenzo.androidpumpio.R;
 
+import model.post.PostNote;
+import model.post.PostResponse;
+import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
+import service.PumpIORestAPI;
+import service.PumpIORestAdapter;
+
 public class PostActivity extends ActionBarActivity {
     private SharedPreferences sharedPref;
     private  String clientId = "";
     private  String clientSecret = "";
     private String token = "";
     private String  tokenSecret = "";
+    private String nickname;
+    private PumpIORestAPI pumpIORestAPI;
 
     private EditText editTextNotes;
     private Button buttonPost;
@@ -47,6 +55,15 @@ public class PostActivity extends ActionBarActivity {
     }
 
     private void postNotes() {
+        RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(clientId, clientSecret);
+        retrofitHttpOAuthConsumer.setTokenWithSecret(token, tokenSecret);
+        pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
+
+        PostNote postNote = new PostNote();
+        postNote.setContent(editTextNotes.getText().toString());
+
+        PostResponse postResponse = pumpIORestAPI.postNote(nickname,postNote);
+
 
 
 
@@ -61,7 +78,7 @@ public class PostActivity extends ActionBarActivity {
         clientId = sharedPref.getString(getString(R.string.client_id), clientId);
 
         if ("".equals(clientId)) {
-            clientId = "_OcSJ3Wi8BVDwIrr6wPdqA";
+            clientId = "dr2bpvpTraVvyiDSN64rJQ";
         }
 
 
@@ -69,11 +86,12 @@ public class PostActivity extends ActionBarActivity {
         clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
 
         if ("".equals(clientSecret)) {
-            clientSecret = "ZLAwmRasc5JQjemXi2piSZ36u1SMLGKXWRomOHlGRMg";
+            clientSecret = "_btRT79RCgddPd6XB6Ve4Bs-hY61-bhiVtcbz6u1Qpo";
         }
 
         token = sharedPref.getString(getString(R.string.token), token);
-        token = sharedPref.getString(getString(R.string.tokenSecret), tokenSecret);
+        tokenSecret = sharedPref.getString(getString(R.string.tokenSecret), tokenSecret);
+        nickname = "daori";
 
     }
 

@@ -10,7 +10,7 @@ import se.akerfeldt.signpost.retrofit.SigningOkClient;
  * Created by katenzo on 12/9/14.
  */
 public class PumpIORestAdapter {
-    public static final String API_URL = "http://10.0.0.140";//"https://pumprock.net/";
+    public static final String API_URL = "http://dev-netzme.duckdns.org:8888";//http://10.0.0.140";//"https://pumprock.net/";
     private static RestAdapter restAdapter;
 
     private static RestAdapter getRestAdapter() {

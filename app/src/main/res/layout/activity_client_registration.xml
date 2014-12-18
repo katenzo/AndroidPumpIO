@@ -1,11 +1,78 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".RegistrationActivity">
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context=".RegistrationActivity">
 
-    <TextView android:text="@string/hello_world" android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nick Name"
+        android:id="@+id/labelNickName"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignBaseline="@+id/editTextNickName" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/editTextNickName"
+        android:layout_toRightOf="@+id/labelNickName"
+        android:layout_alignParentRight="true"
+
+        android:layout_alignParentEnd="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Password"
+        android:id="@+id/labelPassword"
+        android:layout_below="@+id/editTextNickName"
+        android:layout_toLeftOf="@+id/editTextPassword"
+        android:layout_alignParentLeft="true"
+        android:layout_alignBaseline="@+id/editTextPassword" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPassword"
+        android:ems="10"
+        android:id="@+id/editTextPassword"
+        android:layout_below="@+id/editTextNickName"
+        android:layout_alignParentRight="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Register"
+        android:id="@+id/buttonLogin"
+        android:layout_below="@+id/editTextPassword"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:id="@+id/textInfo"
+        android:text="@string/hello_world"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/buttonLogin"
+        android:visibility="invisible"
+
+        />
+
+    <WebView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/webView"
+        android:layout_alignParentBottom="true"
+        android:visibility="visible"
+        android:layout_centerHorizontal="true"
+
+        />
+
 
 </RelativeLayout>

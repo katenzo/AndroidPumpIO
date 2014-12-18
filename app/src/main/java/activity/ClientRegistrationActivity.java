@@ -3,72 +3,147 @@ package activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.StrictMode;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.webkit.WebView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
+
 
 import com.katenzo.androidpumpio.R;
 
+import java.security.SignatureException;
+
 import model.Constanta;
-import model.registerapi.RegisterAPI;
-import model.registerapi.RegisterAPIResponse;
+import model.OAuth;
+import model.register.Login;
+import model.register.RegisterUser;
+import model.registerClient.RegisterApplication;
+import model.registerClient.RegisterClient;
+import model.registerClient.RegisterClientWithAccount;
+import oauth.signpost.OAuthConsumer;
+import oauth.signpost.OAuthProvider;
+import oauth.signpost.basic.DefaultOAuthConsumer;
+import oauth.signpost.basic.DefaultOAuthProvider;
+import oauth.signpost.exception.OAuthCommunicationException;
+import oauth.signpost.exception.OAuthExpectationFailedException;
+import oauth.signpost.exception.OAuthMessageSignerException;
+import oauth.signpost.exception.OAuthNotAuthorizedException;
 import retrofit.Callback;
+import retrofit.RequestInterceptor;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
+import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
 import service.PumpIORestAdapter;
 
 
 public class ClientRegistrationActivity extends ActionBarActivity {
     private SharedPreferences sharedPref;
+    private PumpIORestAPI pumpIORestAPI;
+    private TextView textInfo;
+    private RegisterClientWithAccount registerClientWithAccount;
+    private RegisterClient registerClient;
+
+    private EditText nickName;
+    private EditText password;
+    private Button button;
+    private WebView mWebView;
+    private OAuthConsumer consumer;
+    private String mAuthUrl;
+    private OAuthConsumer mConsumer;
+    private OAuthProvider mProvider;
+
+    private static final String TAG = "PumpioAuthActivity";
+    private final static String CALLBACK = PumpIORestAdapter.API_URL + "DUMMY_OAUTH_CALLBACK";
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client_registration);
+        nickName = (EditText) findViewById(R.id.editTextNickName);
+        password = (EditText) findViewById(R.id.editTextPassword);
+        textInfo = (TextView) findViewById(R.id.textInfo);
+        button = (Button) findViewById(R.id.buttonLogin);
+        mWebView = (WebView) findViewById(R.id.webView);
+
+
+        textInfo.setText(PumpIORestAdapter.API_URL);
+
+
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
 
 
         Context context = getApplicationContext();
         sharedPref = context.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-        String client_id = getResources().getString(R.string.client_id);
-        String clientId = sharedPref.getString(getString(R.string.client_id), client_id);
-        String client_secret = getResources().getString(R.string.client_secret);
-        String clientSecret = sharedPref.getString(getString(R.string.client_id), client_secret);
-        Toast.makeText(getApplicationContext(),clientSecret,Toast.LENGTH_LONG).show();
 
-        PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface();
-        RegisterAPI register = new RegisterAPI();
-        register.setType(Constanta.REGISTER_CLIENT_ASSOCIATE);
-        register.setApplicationType(Constanta.REGISTER_APPLICATION_TYPE_NATIVE);
-        register.setApplicationName(Constanta.REGISTER_APPLICATION_NAME);
-
-        pumpIORestAPI.registerAPI(register, new Callback<RegisterAPIResponse>() {
+        button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void success(RegisterAPIResponse registerResponse, Response response) {
-                if (response.getStatus() == Constanta.RESPONSE_STATUS_OK) {
-
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putString(getString(R.string.client_id), registerResponse.getClientId());
-                    editor.putString(getString(R.string.client_secret), registerResponse.getClientSecret());
-                    editor.commit();
-                    Toast.makeText(getApplicationContext(), registerResponse.getClientId(), Toast.LENGTH_LONG).show();
-
-                    Intent intent = new Intent(getApplicationContext(), RegistrationActivity.class);
-                    intent.setAction(Intent.ACTION_VIEW);
-
-                    startActivity(intent);
-
-                }
-            }
-
-            @Override
-            public void failure(RetrofitError error) {
-                Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_LONG).show();
+            public void onClick(View v) {
+                callLogin();
             }
         });
+
+
+    }
+
+    private void callLogin() {
+
+        String clientId = "";
+        clientId = sharedPref.getString(getString(R.string.client_id), clientId);
+
+        if ("".equals(clientId)) {
+            clientId = "_OcSJ3Wi8BVDwIrr6wPdqA";
+        }
+
+        String clientSecret = "";
+
+        clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
+
+        if ("".equals(clientSecret)) {
+            clientSecret = "ZLAwmRasc5JQjemXi2piSZ36u1SMLGKXWRomOHlGRMg";
+        }
+
+        RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(clientId, clientSecret);
+        retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);
+
+        RegisterUser regC = new RegisterUser();
+        regC.setNickName(nickName.getText().toString());
+        regC.setPassword(password.getText().toString());
+
+
+        try {
+            pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
+
+            Login login = pumpIORestAPI.mainLogin(regC.getNickName(), regC.getPassword());
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString(getString(R.string.token), login.getToken());
+            editor.putString(getString(R.string.tokenSecret), login.getSecret());
+            editor.putString(getString(R.string.tokenSecret), login.getSecret());
+
+            editor.commit();
+
+
+            Intent intent = new Intent(getApplicationContext(), PostActivity.class);
+            intent.setAction(Intent.ACTION_VIEW);
+
+            startActivity(intent);
+        } catch (Exception ex) {
+            Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
+        }
+
 
     }
 

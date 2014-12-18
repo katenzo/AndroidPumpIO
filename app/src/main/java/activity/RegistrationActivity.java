@@ -14,8 +14,8 @@ import android.widget.Toast;
 import com.katenzo.androidpumpio.R;
 
 import model.register.Profile;
-import model.register.RegisterPumpIo;
-import model.register.RegisterPumpIoResponse;
+import model.register.RegisterUser;
+import model.register.RegisterUserResponse;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -57,18 +57,17 @@ public class RegistrationActivity extends ActionBarActivity {
     private void registerUser() {
         PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface();
 
-        RegisterPumpIo registerPumpIo =  new RegisterPumpIo();
-        registerPumpIo.setNickName(nickname.getText().toString());
-        registerPumpIo.setPassword(password.getText().toString());
+        RegisterUser registerUser =  new RegisterUser();
+        registerUser.setNickName(nickname.getText().toString());
+        registerUser.setPassword(password.getText().toString());
 
-        pumpIORestAPI.register(registerPumpIo, new Callback<RegisterPumpIoResponse>() {
+        pumpIORestAPI.registerUser(registerUser, new Callback<RegisterUserResponse>() {
 
             @Override
-            public void success(RegisterPumpIoResponse registerPumpIoResponse, Response response) {
-                String nickname  = registerPumpIoResponse.getNickname();
-                Profile profile = registerPumpIoResponse.getProfile();
-                String secret = registerPumpIoResponse.getSecret();
-
+            public void success(RegisterUserResponse registerUserResponse, Response response) {
+                String nickname = registerUserResponse.getNickname();
+                Profile profile = registerUserResponse.getProfile();
+                String secret = registerUserResponse.getSecret();
 
 
             }
@@ -77,7 +76,7 @@ public class RegistrationActivity extends ActionBarActivity {
             public void failure(RetrofitError error) {
                 Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_LONG).show();
             }
-            });
+        });
 
     }
 

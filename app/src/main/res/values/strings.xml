@@ -15,5 +15,7 @@
     <string name="prompt_id">user@pump,id</string>
     <string name="action_sign_in_short">Login</string>
     <string name="title_activity_post">PostActivity</string>
+    <string name="title_activity_post_image">PostImageActivity</string>
+    <string name="title_activity_main_feed">MainFeedActivity</string>
 
 </resources>

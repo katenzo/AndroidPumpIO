@@ -18,27 +18,12 @@ import android.widget.Toast;
 
 import com.katenzo.androidpumpio.R;
 
-import java.security.SignatureException;
-
-import model.Constanta;
-import model.OAuth;
 import model.register.Login;
 import model.register.RegisterUser;
-import model.registerClient.RegisterApplication;
 import model.registerClient.RegisterClient;
 import model.registerClient.RegisterClientWithAccount;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
-import oauth.signpost.basic.DefaultOAuthConsumer;
-import oauth.signpost.basic.DefaultOAuthProvider;
-import oauth.signpost.exception.OAuthCommunicationException;
-import oauth.signpost.exception.OAuthExpectationFailedException;
-import oauth.signpost.exception.OAuthMessageSignerException;
-import oauth.signpost.exception.OAuthNotAuthorizedException;
-import retrofit.Callback;
-import retrofit.RequestInterceptor;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
 import service.PumpIORestAdapter;
@@ -131,12 +116,11 @@ public class ClientRegistrationActivity extends ActionBarActivity {
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString(getString(R.string.token), login.getToken());
             editor.putString(getString(R.string.tokenSecret), login.getSecret());
-            editor.putString(getString(R.string.tokenSecret), login.getSecret());
 
             editor.commit();
 
 
-            Intent intent = new Intent(getApplicationContext(), PostActivity.class);
+            Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
             intent.setAction(Intent.ACTION_VIEW);
 
             startActivity(intent);

@@ -14,8 +14,11 @@ import retrofit.Callback;
 import retrofit.http.Body;
 import retrofit.http.Field;
 import retrofit.http.FormUrlEncoded;
+import retrofit.http.Multipart;
 import retrofit.http.POST;
+import retrofit.http.Part;
 import retrofit.http.Path;
+import retrofit.mime.TypedFile;
 
 public interface PumpIORestAPI {
     @POST("/api/client/register")
@@ -39,6 +42,10 @@ public interface PumpIORestAPI {
 
     @POST("/api/user/{nickname}/feed")
     PostResponse postNote(@Path("nickname") String nickname ,@Body PostNote postNote);
+
+    @FormUrlEncoded
+    @POST("/main/upload")
+    PostResponse uploadImage(@Field("title") String title, @Field("description") String description, @Field("qqfile") TypedFile photo);
 
 
 }

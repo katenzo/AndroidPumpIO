@@ -1,25 +1,76 @@
 package model.post;
 
-/**
- * Created by katenzo on 12/17/14.
- */
+import com.google.gson.annotations.Expose;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class PostNote {
-    String objectType ="note";
-    String content;
 
-    public String getObjectType() {
-        return objectType;
+    @Expose
+    private String verb;
+    @Expose
+    private Object object;
+    @Expose
+    private List<To> to = new ArrayList<To>();
+    @Expose
+    private List<Cc> cc = new ArrayList<Cc>();
+
+    /**
+     * @return The verb
+     */
+    public String getVerb() {
+        return verb;
     }
 
-    public void setObjectType(String objectType) {
-        this.objectType = objectType;
+    /**
+     * @param verb The verb
+     */
+    public void setVerb(String verb) {
+        this.verb = verb;
     }
 
-    public String getContent() {
-        return content;
+    /**
+     * @return The object
+     */
+    public Object getObject() {
+        return object;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    /**
+     * @param object The object
+     */
+    public void setObject(Object object) {
+        this.object = object;
     }
+
+    /**
+     * @return The to
+     */
+    public List<To> getTo() {
+        return to;
+    }
+
+    /**
+     * @param to The to
+     */
+    public void setTo(List<To> to) {
+        this.to = to;
+    }
+
+    /**
+     * @return The cc
+     */
+    public List<Cc> getCc() {
+        return cc;
+    }
+
+    /**
+     * @param cc The cc
+     */
+    public void setCc(List<Cc> cc) {
+        this.cc = cc;
+    }
+
 }
+

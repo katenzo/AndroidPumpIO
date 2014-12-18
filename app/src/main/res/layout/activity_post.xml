@@ -32,4 +32,22 @@
         android:layout_below="@+id/editTextNotes"
         android:layout_centerHorizontal="true" />
 
+    <EditText
+
+        android:inputType="textMultiLine"
+        android:lines="8"
+        android:minLines="6"
+        android:gravity="top|left"
+        android:maxLines="10"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:scrollbars="vertical"
+
+        android:id="@+id/editTextResponse"
+        android:visibility="visible"
+        android:layout_below="@+id/buttonPost"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="55dp" />
+
 </RelativeLayout>

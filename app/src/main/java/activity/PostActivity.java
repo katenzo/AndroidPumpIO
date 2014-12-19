@@ -79,7 +79,7 @@ public class PostActivity extends ActionBarActivity {
 
         token = sharedPref.getString(getString(R.string.token), token);
         tokenSecret = sharedPref.getString(getString(R.string.tokenSecret), tokenSecret);
-        nickname = "katenzo";
+        nickname = sharedPref.getString(getString(R.string.nickName), nickname);
 
     }
 

@@ -8,6 +8,7 @@
     <string name="client_secret">client_secret</string>
     <string name="token">token</string>
     <string name="tokenSecret">tokenSecret</string>
+    <string name="nickName">nickname</string>
     <string name="title_activity_registration">RegistrationActivity</string>
     <string name="preference_file_key">com.katenzo.androidpumpio</string>
     <string name="title_activity_login">LoginActivity</string>

@@ -116,7 +116,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString(getString(R.string.token), login.getToken());
             editor.putString(getString(R.string.tokenSecret), login.getSecret());
-
+            editor.putString(getString(R.string.nickName),nickName.getText().toString());
             editor.commit();
 
 

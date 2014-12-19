@@ -65,7 +65,7 @@ public class PostImageActivity extends PostActivity {
             @Override
             public void onClick(View v) {
 
-                 postNotes();
+                 postImages();
 
 
             }
@@ -77,7 +77,7 @@ public class PostImageActivity extends PostActivity {
     }
 
 
-    private void postNotes() {
+    private void postImages() {
         RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = getRetrofitHttpOAuthConsumer();
         PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
 

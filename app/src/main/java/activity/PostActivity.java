@@ -8,6 +8,8 @@ import android.support.v7.app.ActionBarActivity;
 
 import com.katenzo.androidpumpio.R;
 
+import model.OAuth;
+import oauth.signpost.OAuthConsumer;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
 
@@ -65,16 +67,18 @@ public class PostActivity extends ActionBarActivity {
 
         clientId = sharedPref.getString(getString(R.string.client_id), clientId);
 
-        if ("".equals(clientId)) {
-            clientId = "dr2bpvpTraVvyiDSN64rJQ";
-        }
-
-
-
         clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
 
-        if ("".equals(clientSecret)) {
-            clientSecret = "_btRT79RCgddPd6XB6Ve4Bs-hY61-bhiVtcbz6u1Qpo";
+
+        if ("".equals(clientId)) {
+            OAuthConsumer oAuthConsumer = OAuth.getOAuthConsumerClient();
+            clientId = oAuthConsumer.getConsumerKey();
+            clientSecret = oAuthConsumer.getConsumerSecret();
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString(getString(R.string.client_id), clientId);
+            editor.putString(getString(R.string.client_secret), clientSecret);
+            editor.commit();
+
         }
 
         token = sharedPref.getString(getString(R.string.token), token);

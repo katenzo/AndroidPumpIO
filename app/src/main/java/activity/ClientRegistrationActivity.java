@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import com.katenzo.androidpumpio.R;
 
+import model.OAuth;
 import model.register.Login;
 import model.register.RegisterUser;
 import model.registerClient.RegisterClient;
@@ -57,7 +58,6 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         password = (EditText) findViewById(R.id.editTextPassword);
         textInfo = (TextView) findViewById(R.id.textInfo);
         button = (Button) findViewById(R.id.buttonLogin);
-        mWebView = (WebView) findViewById(R.id.webView);
 
 
         textInfo.setText(PumpIORestAdapter.API_URL);
@@ -87,19 +87,20 @@ public class ClientRegistrationActivity extends ActionBarActivity {
     private void callLogin() {
 
         String clientId = "";
-        clientId = sharedPref.getString(getString(R.string.client_id), clientId);
-
-        if ("".equals(clientId)) {
-            clientId = "dr2bpvpTraVvyiDSN64rJQ";
-        }
-
         String clientSecret = "";
-
+        clientId = sharedPref.getString(getString(R.string.client_id), clientId);
         clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
+        if ("".equals(clientId)) {
 
-        if ("".equals(clientSecret)) {
-            clientSecret = "_btRT79RCgddPd6XB6Ve4Bs-hY61-bhiVtcbz6u1Qpo";
+            OAuthConsumer oAuthConsumer = OAuth.getOAuthConsumerClient();
+            clientId = oAuthConsumer.getConsumerKey();
+            clientSecret = oAuthConsumer.getConsumerSecret();
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString(getString(R.string.client_id), clientId);
+            editor.putString(getString(R.string.client_secret), clientSecret);
+            editor.commit();
         }
+
 
         RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(clientId, clientSecret);
         retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);

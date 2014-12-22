@@ -10,6 +10,10 @@ public class Object {
     @Expose
     private String content;
 
+    @Expose
+    private String id;
+
+
     /**
      *
      * @return
@@ -17,6 +21,14 @@ public class Object {
      */
     public String getObjectType() {
         return objectType;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     /**

@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -19,6 +20,7 @@ import com.squareup.picasso.Picasso;
 import java.io.File;
 
 import model.post.*;
+import model.post.Object;
 import retrofit.mime.TypedFile;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
@@ -46,6 +48,9 @@ public class PostImageActivity extends PostActivity {
         editTextDescription = (EditText) findViewById(R.id.editTextDescription);
         buttonPost = (Button) findViewById(R.id.buttonPost);
         buttonPost.setEnabled(false);
+        editTextDescription.setEnabled(false);
+        editTextTitle.setEnabled(false);
+        
 
         Button buttonSelectImage = (Button) findViewById(R.id.buttonSelect);
         buttonSelectImage.setOnClickListener(new View.OnClickListener() {
@@ -82,19 +87,40 @@ public class PostImageActivity extends PostActivity {
         PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
 
         File photo = new File(selectedImagePath);
-        TypedFile typedFilePhoto = new TypedFile("application/octet-stream", photo);
+        String extension = MimeTypeMap.getFileExtensionFromUrl(selectedImagePath);
+
+        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+
+        TypedFile typedFilePhoto = new TypedFile(mimeType, photo);
 
         try {
-            PostResponse postResponse = pumpIORestAPI.uploadImage(
+            PostUploadResponse postResponse = pumpIORestAPI.uploadPostImage(
                     getNickname(),
-                    editTextTitle.getText().toString(),
-                    editTextDescription.getText().toString(),
                     typedFilePhoto
             );
 
-            //String responseContent = postResponse.getContent();
-            //editTextResponse.setVisibility(View.VISIBLE);
-            //editTextResponse.setText(responseContent);
+            Object object = new Object();
+
+            object.setId(postResponse.getId());
+            object.setObjectType(postResponse.getObjectType());
+
+
+            PostImage postImage = new PostImage();
+
+            postImage.setVerb("post");
+            postImage.setObject(object);
+
+            PostResponse postingResponse = pumpIORestAPI.postImage(
+                    getNickname(), postImage);
+
+
+            Toast.makeText(getApplicationContext(), "Posting Image done", Toast.LENGTH_LONG).show();
+            editTextDescription.setText("");
+            editTextDescription.setEnabled(false);
+            editTextTitle.setText("");
+            editTextTitle.setEnabled(false);
+            buttonPost.setEnabled(false);
+            imageViewPost.setImageResource(R.drawable.ic_launcher);
 
         } catch (Exception exception) {
             Toast.makeText(getApplicationContext(), exception.getMessage(), Toast.LENGTH_LONG).show();
@@ -109,6 +135,8 @@ public class PostImageActivity extends PostActivity {
                 Picasso.with(getApplicationContext()).load(selectedImageUri).into(imageViewPost);
                 selectedImagePath = getPath(selectedImageUri);
                 buttonPost.setEnabled(true);
+                editTextDescription.setEnabled(true);
+                editTextTitle.setEnabled(true);
             }
         }
     }

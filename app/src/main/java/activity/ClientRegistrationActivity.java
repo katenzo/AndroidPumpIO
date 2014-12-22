@@ -86,6 +86,8 @@ public class ClientRegistrationActivity extends ActionBarActivity {
 
     private void callLogin() {
 
+        try {
+
         String clientId = "";
         String clientSecret = "";
         clientId = sharedPref.getString(getString(R.string.client_id), clientId);
@@ -110,7 +112,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         regC.setPassword(password.getText().toString());
 
 
-        try {
+
             pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
 
             Login login = pumpIORestAPI.mainLogin(regC.getNickName(), regC.getPassword());

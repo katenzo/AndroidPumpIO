@@ -87,6 +87,7 @@ public class PostImageActivity extends PostActivity {
         PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
 
         File photo = new File(selectedImagePath);
+<<<<<<< HEAD
         String extension = MimeTypeMap.getFileExtensionFromUrl(selectedImagePath);
 
         String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
@@ -95,6 +96,12 @@ public class PostImageActivity extends PostActivity {
 
         try {
             PostUploadResponse postResponse = pumpIORestAPI.uploadPostImage(
+=======
+        TypedFile typedFilePhoto = new TypedFile("image/jpeg", photo);
+
+        try {
+            PostResponse postResponse = pumpIORestAPI.uploadImageOnly(
+>>>>>>> FETCH_HEAD
                     getNickname(),
                     typedFilePhoto
             );

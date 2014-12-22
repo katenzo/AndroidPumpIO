@@ -95,6 +95,12 @@ public class PostImageActivity extends PostActivity {
 
         try {
             PostUploadResponse postResponse = pumpIORestAPI.uploadPostImage(
+=======
+        TypedFile typedFilePhoto = new TypedFile("image/jpeg", photo);
+
+        try {
+            PostResponse postResponse = pumpIORestAPI.uploadImageOnly(
+>>>>>>> FETCH_HEAD
                     getNickname(),
                     typedFilePhoto
             );

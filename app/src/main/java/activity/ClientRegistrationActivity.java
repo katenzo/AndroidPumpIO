@@ -1,9 +1,13 @@
 package activity;
 
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
 import android.os.StrictMode;
+import android.os.SystemClock;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -12,6 +16,8 @@ import android.view.View;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,18 +30,24 @@ import model.registerClient.RegisterClient;
 import model.registerClient.RegisterClientWithAccount;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.events.OnTextChangeEvent;
+import rx.android.observables.ViewObservable;
+import rx.functions.Func2;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
 import service.PumpIORestAdapter;
 
 
 public class ClientRegistrationActivity extends ActionBarActivity {
+    private static final String TAG = "PumpioAuthActivity";
+    private final static String CALLBACK = PumpIORestAdapter.API_URL + "DUMMY_OAUTH_CALLBACK";
     private SharedPreferences sharedPref;
     private PumpIORestAPI pumpIORestAPI;
     private TextView textInfo;
     private RegisterClientWithAccount registerClientWithAccount;
     private RegisterClient registerClient;
-
     private EditText nickName;
     private EditText password;
     private Button button;
@@ -44,10 +56,6 @@ public class ClientRegistrationActivity extends ActionBarActivity {
     private String mAuthUrl;
     private OAuthConsumer mConsumer;
     private OAuthProvider mProvider;
-
-    private static final String TAG = "PumpioAuthActivity";
-    private final static String CALLBACK = PumpIORestAdapter.API_URL + "DUMMY_OAUTH_CALLBACK";
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +66,12 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         textInfo = (TextView) findViewById(R.id.textInfo);
         button = (Button) findViewById(R.id.buttonLogin);
         mWebView = (WebView) findViewById(R.id.webView);
+        button.setEnabled(false);
 
+        Observable<Boolean> observer = createObserver();
+        Subscriber<Boolean> subscriber = createSubscriber(observer);
+
+        observer.subscribe(subscriber);
 
         textInfo.setText(PumpIORestAdapter.API_URL);
 
@@ -84,6 +97,49 @@ public class ClientRegistrationActivity extends ActionBarActivity {
 
     }
 
+    private Observable<Boolean> createObserver(){
+        Observable<OnTextChangeEvent> nicknameObserve = ViewObservable.text(nickName);
+        Observable<OnTextChangeEvent> passwordObserve = ViewObservable.text(password);
+
+        Observable<Boolean> onchangeBehavior = Observable.combineLatest(
+                nicknameObserve, passwordObserve,
+                new Func2<OnTextChangeEvent, OnTextChangeEvent, Boolean>() {
+                    @Override
+                    public Boolean call(OnTextChangeEvent nickname, OnTextChangeEvent password) {
+                        if(!nickname.text.toString().equals("") && !password.text.toString().equals("")){
+                            return true;
+                        }
+                        return false;
+                    }
+        });
+    return onchangeBehavior;
+    }
+
+    private Subscriber<Boolean> createSubscriber(Observable<Boolean> onchangeBehavior) {
+        Subscriber<Boolean> buttonSubscriber = new Subscriber<Boolean>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(Boolean aBoolean) {
+                if(aBoolean){
+                    button.setEnabled(aBoolean);
+                } else {
+                    button.setEnabled(aBoolean);
+                }
+            }
+        };
+        return buttonSubscriber;
+    }
+
+
     private void callLogin() {
 
         String clientId = "";
@@ -108,8 +164,13 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         regC.setNickName(nickName.getText().toString());
         regC.setPassword(password.getText().toString());
 
+        final ProgressDialog loadingIndicator = new ProgressDialog(this);
+        loadingIndicator.setTitle("Loading");
+        loadingIndicator.setMessage("Wait A little Longer");
+        loadingIndicator.show();
 
         try {
+
             pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
 
             Login login = pumpIORestAPI.mainLogin(regC.getNickName(), regC.getPassword());
@@ -122,7 +183,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
 
             Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
             intent.setAction(Intent.ACTION_VIEW);
-
+            loadingIndicator.dismiss();
             startActivity(intent);
         } catch (Exception ex) {
             Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_LONG).show();

@@ -28,5 +28,5 @@ dependencies {
     compile 'com.squareup.okhttp:okhttp:2.0.0'
     compile 'com.squareup.picasso:picasso:2.4.0'
     compile 'oauth.signpost:signpost-core:1.2'
-    compile 'com.squareup.picasso:picasso:2.4.0'
+    compile 'io.reactivex:rxandroid:0.23.0'
 }

@@ -14,7 +14,7 @@ public class PumpIORestAdapter {
     private static final String SERVER_PUMP_ROCK =  "https://pumprock.net";
     private static final String SERVER_NETZME= "http://dev-netzme.duckdns.org:8888";
 
-    public static final String API_URL = SERVER_PUMP_ROCK; //"https://pumprock.net";//"http://dev-netzme.duckdns.org:8888";//http://10.0.0.140";//"https://pumprock.net/";
+    public static final String API_URL = SERVER_NETZME; //"https://pumprock.net";//"http://dev-netzme.duckdns.org:8888";//http://10.0.0.140";//"https://pumprock.net/";
     private static RestAdapter restAdapter;
 
     private static RestAdapter getRestAdapter() {

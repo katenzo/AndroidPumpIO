@@ -87,7 +87,6 @@ public class PostImageActivity extends PostActivity {
         PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
 
         File photo = new File(selectedImagePath);
-<<<<<<< HEAD
         String extension = MimeTypeMap.getFileExtensionFromUrl(selectedImagePath);
 
         String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);

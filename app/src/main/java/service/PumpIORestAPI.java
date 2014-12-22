@@ -52,13 +52,7 @@ public interface PumpIORestAPI {
     @POST("/api/user/{nickname}/uploads")
     PostUploadResponse uploadPostingImage(@Path("nickname") String nickname, @Body UploadPostImage uploadPostImage);
 
-<<<<<<< HEAD
-
     @POST("/api/user/{nickname}/feed")
     PostResponse postImage(@Path("nickname") String nickname, @Body PostImage postImage);
 
-=======
-    @POST("/api/user/{nickname}/uploads")
-    PostResponse uploadImageOnly(@Path("nickname") String nickname, @Body TypedFile photo);
->>>>>>> FETCH_HEAD
 }

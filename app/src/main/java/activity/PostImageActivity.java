@@ -82,11 +82,11 @@ public class PostImageActivity extends PostActivity {
         PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
 
         File photo = new File(selectedImagePath);
-        TypedFile typedFilePhoto = new TypedFile("application/octet-stream", photo);
+        TypedFile typedFilePhoto = new TypedFile("image/*", photo);
 
         try {
             PostResponse postResponse = pumpIORestAPI.uploadImage(
-
+                    getNickname(),
                     editTextTitle.getText().toString(),
                     editTextDescription.getText().toString(),
                     typedFilePhoto

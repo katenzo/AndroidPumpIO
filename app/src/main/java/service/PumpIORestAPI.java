@@ -44,8 +44,8 @@ public interface PumpIORestAPI {
     PostResponse postNote(@Path("nickname") String nickname ,@Body PostNote postNote);
 
     @FormUrlEncoded
-    @POST("/main/upload")
-    PostResponse uploadImage(@Field("title") String title, @Field("description") String description, @Field("qqfile") TypedFile photo);
+    @POST("/api/user/{nickname}/uploads")
+    PostResponse uploadImage(@Path("nickname") String nickname,@Field("title") String title, @Field("description") String description, @Field("qqfile") TypedFile photo);
 
 
 }

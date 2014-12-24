@@ -17,14 +17,22 @@ import android.widget.Toast;
 
 
 import com.katenzo.androidpumpio.R;
-
 import model.OAuth;
+import model.OAuthFields;
 import model.register.Login;
 import model.register.RegisterUser;
 import model.registerClient.RegisterClient;
 import model.registerClient.RegisterClientWithAccount;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.events.OnClickEvent;
+import rx.android.events.OnTextChangeEvent;
+import rx.android.observables.ViewObservable;
+import rx.functions.Action1;
+import rx.functions.Func1;
+import rx.functions.Func2;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
 import service.PumpIORestAdapter;
@@ -73,67 +81,97 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         sharedPref = context.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
+        Observable<OnClickEvent> onClickEventObservable = ViewObservable.clicks(button);
 
-        button.setOnClickListener(new View.OnClickListener() {
+        Observable<OAuthFields> oAuthFieldsObservable = onClickEventObservable.flatMap(new Func1<OnClickEvent, Observable<OAuthFields>>() {
             @Override
-            public void onClick(View v) {
-                callLogin();
+            public Observable<OAuthFields> call(OnClickEvent onClickEvent) {
+                String clientId = "";
+                String clientSecret = "";
+                clientId = sharedPref.getString(getString(R.string.client_id), clientId);
+                clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
+                if ("".equals(clientId)) {
+
+                    OAuthConsumer oAuthConsumer = OAuth.getOAuthConsumerClient();
+                    clientId = oAuthConsumer.getConsumerKey();
+                    clientSecret = oAuthConsumer.getConsumerSecret();
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(getString(R.string.client_id), clientId);
+                    editor.putString(getString(R.string.client_secret), clientSecret);
+                    editor.commit();
+                }
+
+                OAuthFields fields = new OAuthFields(clientId, clientSecret);
+                return Observable.just(fields);
             }
         });
 
+        Observable<RetrofitHttpOAuthConsumer> retrofitObservable = oAuthFieldsObservable.flatMap(new Func1<OAuthFields, Observable<RetrofitHttpOAuthConsumer>>() {
+            @Override
+            public Observable<RetrofitHttpOAuthConsumer> call(OAuthFields oAuthFields) {
+                RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(oAuthFields.getClientId(), oAuthFields.getClientSecret());
+                retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);
+                return Observable.just(retrofitHttpOAuthConsumer);
+            }
+        });
 
+        Subscriber<RetrofitHttpOAuthConsumer> subscriber = new Subscriber<RetrofitHttpOAuthConsumer>() {
+            @Override
+            public void onCompleted() {
+                Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
+                intent.setAction(Intent.ACTION_VIEW);
+
+                startActivity(intent);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onNext(RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer) {
+                try {
+                    pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
+
+                    Login login = pumpIORestAPI.mainLogin(nickName.getText().toString(), password.getText().toString());
+                    onCompleted();
+                }catch (Exception e) {
+                    onError(e);
+                }
+            }
+        };
+        retrofitObservable.subscribe(subscriber);
+
+
+        observTextfield();
     }
 
-    private void callLogin() {
 
-        try {
+    private void observTextfield() {
+        Observable<OnTextChangeEvent> textNickName = ViewObservable.text(nickName);
+        Observable<OnTextChangeEvent> textPassword = ViewObservable.text(password);
 
-        String clientId = "";
-        String clientSecret = "";
-        clientId = sharedPref.getString(getString(R.string.client_id), clientId);
-        clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
-        if ("".equals(clientId)) {
+        Observable.combineLatest(textNickName, textPassword, new Func2<OnTextChangeEvent, OnTextChangeEvent, Boolean>() {
+            @Override
+            public Boolean call(OnTextChangeEvent onNickNameChangeEvent, OnTextChangeEvent onPasswordChangeEvent) {
+                String sNickName = onNickNameChangeEvent.text.toString();
+                String sPassword = onPasswordChangeEvent.text.toString();
 
-            OAuthConsumer oAuthConsumer = OAuth.getOAuthConsumerClient();
-            clientId = oAuthConsumer.getConsumerKey();
-            clientSecret = oAuthConsumer.getConsumerSecret();
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(getString(R.string.client_id), clientId);
-            editor.putString(getString(R.string.client_secret), clientSecret);
-            editor.commit();
-        }
-
-
-        RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(clientId, clientSecret);
-        retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);
-
-        RegisterUser regC = new RegisterUser();
-        regC.setNickName(nickName.getText().toString());
-        regC.setPassword(password.getText().toString());
-
-
-
-            pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
-
-            Login login = pumpIORestAPI.mainLogin(regC.getNickName(), regC.getPassword());
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(getString(R.string.token), login.getToken());
-            editor.putString(getString(R.string.tokenSecret), login.getSecret());
-            editor.putString(getString(R.string.nickName),nickName.getText().toString());
-            editor.commit();
-
-
-            Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
-            intent.setAction(Intent.ACTION_VIEW);
-
-            startActivity(intent);
-        } catch (Exception ex) {
-            Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
-        }
-
+                return (sNickName.isEmpty() || sPassword.isEmpty()) ;
+            }
+        }).subscribe(new Action1<Boolean>() {
+            @Override
+            public void call(Boolean aBoolean) {
+                if(aBoolean) {
+                    button.setEnabled(false);
+                } else {
+                    button.setEnabled(true);
+                }
+            }
+        });
 
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

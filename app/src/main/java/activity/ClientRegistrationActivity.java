@@ -32,8 +32,10 @@ import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
 import rx.Observable;
 import rx.Subscriber;
+import rx.android.events.OnClickEvent;
 import rx.android.events.OnTextChangeEvent;
 import rx.android.observables.ViewObservable;
+import rx.functions.Action1;
 import rx.functions.Func2;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
@@ -56,6 +58,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
     private String mAuthUrl;
     private OAuthConsumer mConsumer;
     private OAuthProvider mProvider;
+    private ProgressDialog loadingIndicator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,12 +69,23 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         textInfo = (TextView) findViewById(R.id.textInfo);
         button = (Button) findViewById(R.id.buttonLogin);
         mWebView = (WebView) findViewById(R.id.webView);
-        button.setEnabled(false);
+//        button.setEnabled(false);
 
-        Observable<Boolean> observer = createObserver();
-        Subscriber<Boolean> subscriber = createSubscriber(observer);
+        Observable<Boolean> observerTextChange = createObserver();
+        Observable<OnClickEvent> buttonClick = ViewObservable.clicks(button, false);
 
-        observer.subscribe(subscriber);
+
+        Action1<OnClickEvent> actionCallLogin = new Action1<OnClickEvent>() {
+            @Override
+            public void call(OnClickEvent onClickEvent) {
+                callLogin();
+            }
+        };
+        // Bagaimana menggabungkan observerTextChange dengan buttonClick masih stuck
+        buttonClick.subscribe(actionCallLogin);
+
+//        Subscriber<Boolean> subscriber = createSubscriber(observer);
+//        observer.subscribe(subscriber);
 
         textInfo.setText(PumpIORestAdapter.API_URL);
 
@@ -87,20 +101,23 @@ public class ClientRegistrationActivity extends ActionBarActivity {
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
 
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                callLogin();
-            }
-        });
 
-
+//        button.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                callLogin();
+//            }
+//        });
+//        TODO : Belum Async, belum bisa di coba. tinggal menggunakan show untuk menampilkan
+//        dan dismiss untuk close loading indicator
+//        loadingIndicator = new ProgressDialog(this);
+//        loadingIndicator.setTitle("Loading");
+//        loadingIndicator.setMessage("Wait A little Longer");
     }
 
     private Observable<Boolean> createObserver(){
         Observable<OnTextChangeEvent> nicknameObserve = ViewObservable.text(nickName);
         Observable<OnTextChangeEvent> passwordObserve = ViewObservable.text(password);
-
         Observable<Boolean> onchangeBehavior = Observable.combineLatest(
                 nicknameObserve, passwordObserve,
                 new Func2<OnTextChangeEvent, OnTextChangeEvent, Boolean>() {
@@ -112,6 +129,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
                         return false;
                     }
         });
+
     return onchangeBehavior;
     }
 
@@ -164,10 +182,7 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         regC.setNickName(nickName.getText().toString());
         regC.setPassword(password.getText().toString());
 
-        final ProgressDialog loadingIndicator = new ProgressDialog(this);
-        loadingIndicator.setTitle("Loading");
-        loadingIndicator.setMessage("Wait A little Longer");
-        loadingIndicator.show();
+
 
         try {
 

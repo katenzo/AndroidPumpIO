@@ -14,6 +14,9 @@ import com.katenzo.androidpumpio.R;
 import model.post.PostNote;
 import model.post.PostResponse;
 import model.post.Object;
+import rx.Observable;
+import rx.android.events.OnTextChangeEvent;
+import rx.android.observables.ViewObservable;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
 import service.PumpIORestAdapter;
@@ -30,6 +33,11 @@ public class PostNoteActivity extends PostActivity {
         editTextNotes = (EditText) findViewById(R.id.editTextNotes);
         Button buttonPost = (Button) findViewById(R.id.buttonPost);
         editTextResponse = (EditText) findViewById(R.id.editTextResponse);
+
+        Observable<OnTextChangeEvent> editTextChange = ViewObservable.text(editTextNotes);
+
+
+
         buttonPost.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

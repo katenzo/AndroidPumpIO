@@ -2,7 +2,10 @@ package service;
 
 
 import model.OAuthToken;
+import model.post.PostImage;
 import model.post.PostResponse;
+import model.post.PostUploadResponse;
+import model.post.UploadPostImage;
 import model.register.Login;
 import model.register.RegisterUser;
 import model.register.RegisterUserResponse;
@@ -43,9 +46,13 @@ public interface PumpIORestAPI {
     @POST("/api/user/{nickname}/feed")
     PostResponse postNote(@Path("nickname") String nickname ,@Body PostNote postNote);
 
-    @FormUrlEncoded
-    @POST("/main/upload")
-    PostResponse uploadImage(@Field("title") String title, @Field("description") String description, @Field("qqfile") TypedFile photo);
+    @POST("/api/user/{nickname}/uploads")
+    PostUploadResponse uploadPostImage(@Path("nickname") String nickname, @Body TypedFile photo);
 
+    @POST("/api/user/{nickname}/uploads")
+    PostUploadResponse uploadPostingImage(@Path("nickname") String nickname, @Body UploadPostImage uploadPostImage);
+
+    @POST("/api/user/{nickname}/feed")
+    PostResponse postImage(@Path("nickname") String nickname, @Body PostImage postImage);
 
 }

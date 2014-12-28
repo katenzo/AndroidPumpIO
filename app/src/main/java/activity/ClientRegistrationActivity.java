@@ -2,22 +2,16 @@ package activity;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
 import android.os.StrictMode;
-import android.os.SystemClock;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +19,7 @@ import android.widget.Toast;
 import com.katenzo.androidpumpio.R;
 
 import model.OAuth;
+import model.OAuthField;
 import model.register.Login;
 import model.register.RegisterUser;
 import model.registerClient.RegisterClient;
@@ -37,6 +32,7 @@ import rx.android.events.OnClickEvent;
 import rx.android.events.OnTextChangeEvent;
 import rx.android.observables.ViewObservable;
 import rx.functions.Action1;
+import rx.functions.Func1;
 import rx.functions.Func2;
 import se.akerfeldt.signpost.retrofit.RetrofitHttpOAuthConsumer;
 import service.PumpIORestAPI;
@@ -69,27 +65,9 @@ public class ClientRegistrationActivity extends ActionBarActivity {
         password = (EditText) findViewById(R.id.editTextPassword);
         textInfo = (TextView) findViewById(R.id.textInfo);
         button = (Button) findViewById(R.id.buttonLogin);
-        mWebView = (WebView) findViewById(R.id.webView);
-//        button.setEnabled(false);
-
-        Observable<Boolean> observerTextChange = createObserver();
-        Observable<OnClickEvent> buttonClick = ViewObservable.clicks(button, false);
-
-
-        Action1<OnClickEvent> actionCallLogin = new Action1<OnClickEvent>() {
-            @Override
-            public void call(OnClickEvent onClickEvent) {
-                callLogin();
-            }
-        };
-        // Bagaimana menggabungkan observerTextChange dengan buttonClick masih stuck
-        buttonClick.subscribe(actionCallLogin);
-
-//        Subscriber<Boolean> subscriber = createSubscriber(observer);
-//        observer.subscribe(subscriber);
+        button.setEnabled(false);
 
         textInfo.setText(PumpIORestAdapter.API_URL);
-
 
         if (android.os.Build.VERSION.SDK_INT > 9) {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -103,23 +81,85 @@ public class ClientRegistrationActivity extends ActionBarActivity {
 
 
 
-//        button.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                callLogin();
-//            }
-//        });
 //        TODO : Belum Async, belum bisa di coba. tinggal menggunakan show untuk menampilkan
 //        dan dismiss untuk close loading indicator
 //        loadingIndicator = new ProgressDialog(this);
 //        loadingIndicator.setTitle("Loading");
 //        loadingIndicator.setMessage("Wait A little Longer");
+
+        createObserverTextOnChange();
+
+        Observable<OnClickEvent> buttonClick = ViewObservable.clicks(button, false);
+        buttonClick.map(new Func1<OnClickEvent, OAuthField>() {
+            @Override
+            public OAuthField call(OnClickEvent onClickEvent) {
+                String clientId = "";
+                String clientSecret = "";
+                clientId = sharedPref.getString(getString(R.string.client_id), clientId);
+                clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
+                if ("".equals(clientId)) {
+
+                    OAuthConsumer oAuthConsumer = OAuth.getOAuthConsumerClient();
+                    clientId = oAuthConsumer.getConsumerKey();
+                    clientSecret = oAuthConsumer.getConsumerSecret();
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(getString(R.string.client_id), clientId);
+                    editor.putString(getString(R.string.client_secret), clientSecret);
+                    editor.commit();
+                }
+
+                OAuthField authField = new OAuthField(clientId, clientSecret);
+
+                return authField;
+            }
+        }).map(new Func1<OAuthField, RetrofitHttpOAuthConsumer>() {
+            @Override
+            public RetrofitHttpOAuthConsumer call(OAuthField oAuthField) {
+                RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer =
+                        new RetrofitHttpOAuthConsumer(oAuthField.getClientId(), oAuthField.getClientSecret());
+                retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);
+
+                return retrofitHttpOAuthConsumer;
+            }
+        }).subscribe(new Subscriber<RetrofitHttpOAuthConsumer>() {
+            @Override
+            public void onCompleted() {
+                Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
+                intent.setAction(Intent.ACTION_VIEW);
+//                loadingIndicator.dismiss();
+                startActivity(intent);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onNext(RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer) {
+                try {
+                    pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
+
+                    Login login = pumpIORestAPI.mainLogin(nickName.getText().toString(), password.getText().toString());
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(getString(R.string.token), login.getToken());
+                    editor.putString(getString(R.string.tokenSecret), login.getSecret());
+                    editor.putString(getString(R.string.nickName), nickName.getText().toString());
+                    editor.commit();
+                    onCompleted();
+                }catch (Throwable e){
+                    onError(e);
+                }
+            }
+        });
+
     }
 
-    private Observable<Boolean> createObserver(){
+    private void createObserverTextOnChange(){
         Observable<OnTextChangeEvent> nicknameObserve = ViewObservable.text(nickName);
         Observable<OnTextChangeEvent> passwordObserve = ViewObservable.text(password);
-        Observable<Boolean> onchangeBehavior = Observable.combineLatest(
+
+        Observable.combineLatest(
                 nicknameObserve, passwordObserve,
                 new Func2<OnTextChangeEvent, OnTextChangeEvent, Boolean>() {
                     @Override
@@ -129,83 +169,16 @@ public class ClientRegistrationActivity extends ActionBarActivity {
                         }
                         return false;
                     }
-        });
-
-    return onchangeBehavior;
-    }
-
-    private Subscriber<Boolean> createSubscriber(Observable<Boolean> onchangeBehavior) {
-        Subscriber<Boolean> buttonSubscriber = new Subscriber<Boolean>() {
+        }).subscribe(new Action1<Boolean>() {
             @Override
-            public void onCompleted() {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onNext(Boolean aBoolean) {
+            public void call(Boolean aBoolean) {
                 if(aBoolean){
-                    button.setEnabled(aBoolean);
-                } else {
-                    button.setEnabled(aBoolean);
+                    button.setEnabled(true);
+                }else {
+                    button.setEnabled(false);
                 }
             }
-        };
-        return buttonSubscriber;
-    }
-
-
-    private void callLogin() {
-
-        try {
-
-        String clientId = "";
-        String clientSecret = "";
-        clientId = sharedPref.getString(getString(R.string.client_id), clientId);
-        clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
-        if ("".equals(clientId)) {
-
-            OAuthConsumer oAuthConsumer = OAuth.getOAuthConsumerClient();
-            clientId = oAuthConsumer.getConsumerKey();
-            clientSecret = oAuthConsumer.getConsumerSecret();
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(getString(R.string.client_id), clientId);
-            editor.putString(getString(R.string.client_secret), clientSecret);
-            editor.commit();
-        }
-
-
-        RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(clientId, clientSecret);
-        retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);
-
-        RegisterUser regC = new RegisterUser();
-        regC.setNickName(nickName.getText().toString());
-        regC.setPassword(password.getText().toString());
-
-
-
-            pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
-
-            Login login = pumpIORestAPI.mainLogin(regC.getNickName(), regC.getPassword());
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(getString(R.string.token), login.getToken());
-            editor.putString(getString(R.string.tokenSecret), login.getSecret());
-            editor.putString(getString(R.string.nickName),nickName.getText().toString());
-            editor.commit();
-
-
-            Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
-            intent.setAction(Intent.ACTION_VIEW);
-            loadingIndicator.dismiss();
-            startActivity(intent);
-        } catch (Exception ex) {
-            Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_LONG).show();
-        }
-
+        });
 
     }
 

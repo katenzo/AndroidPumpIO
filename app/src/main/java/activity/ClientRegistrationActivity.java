@@ -30,6 +30,7 @@ import rx.Subscriber;
 import rx.android.events.OnClickEvent;
 import rx.android.events.OnTextChangeEvent;
 import rx.android.observables.ViewObservable;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
@@ -76,52 +77,31 @@ public class ClientRegistrationActivity extends ActionBarActivity {
             StrictMode.setThreadPolicy(policy);
         }
 
-
         Context context = getApplicationContext();
         sharedPref = context.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-        Observable<OnClickEvent> onClickEventObservable = ViewObservable.clicks(button);
 
-        Observable<OAuthFields> oAuthFieldsObservable = onClickEventObservable.flatMap(new Func1<OnClickEvent, Observable<OAuthFields>>() {
+        Observable<Boolean> formInputValidationStream = createFormInputValidationStream();
+        handleButtonEnablement(formInputValidationStream);
+
+        Observable<OnClickEvent> loginButtonClickStream = ViewObservable.clicks(button);
+        loginButtonClickStream.flatMap(new Func1<OnClickEvent, Observable<RetrofitHttpOAuthConsumer>>() {
             @Override
-            public Observable<OAuthFields> call(OnClickEvent onClickEvent) {
-                String clientId = "";
-                String clientSecret = "";
-                clientId = sharedPref.getString(getString(R.string.client_id), clientId);
-                clientSecret = sharedPref.getString(getString(R.string.client_secret), clientSecret);
-                if ("".equals(clientId)) {
-
-                    OAuthConsumer oAuthConsumer = OAuth.getOAuthConsumerClient();
-                    clientId = oAuthConsumer.getConsumerKey();
-                    clientSecret = oAuthConsumer.getConsumerSecret();
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putString(getString(R.string.client_id), clientId);
-                    editor.putString(getString(R.string.client_secret), clientSecret);
-                    editor.commit();
-                }
-
-                OAuthFields fields = new OAuthFields(clientId, clientSecret);
-                return Observable.just(fields);
+            public Observable<RetrofitHttpOAuthConsumer> call(OnClickEvent onClickEvent) {
+                return createRetrofitOAuthStream();
             }
-        });
-
-        Observable<RetrofitHttpOAuthConsumer> retrofitObservable = oAuthFieldsObservable.flatMap(new Func1<OAuthFields, Observable<RetrofitHttpOAuthConsumer>>() {
+        }).flatMap(new Func1<RetrofitHttpOAuthConsumer, Observable<Login>>() {
             @Override
-            public Observable<RetrofitHttpOAuthConsumer> call(OAuthFields oAuthFields) {
-                RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(oAuthFields.getClientId(), oAuthFields.getClientSecret());
-                retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);
-                return Observable.just(retrofitHttpOAuthConsumer);
+            public Observable<Login> call(RetrofitHttpOAuthConsumer oAuthConsumer) {
+                PumpIORestAPI pumpIORestAPI = PumpIORestAdapter.getApiInterface(oAuthConsumer);
+                return pumpIORestAPI.mainLogin(nickName.getText().toString(), password.getText().toString());
             }
-        });
-
-        Subscriber<RetrofitHttpOAuthConsumer> subscriber = new Subscriber<RetrofitHttpOAuthConsumer>() {
+        }).subscribeOn(AndroidSchedulers.mainThread())
+        .subscribe(new Subscriber<Login>() {
             @Override
             public void onCompleted() {
-                Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
-                intent.setAction(Intent.ACTION_VIEW);
 
-                startActivity(intent);
             }
 
             @Override
@@ -130,47 +110,82 @@ public class ClientRegistrationActivity extends ActionBarActivity {
             }
 
             @Override
-            public void onNext(RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer) {
-                try {
-                    pumpIORestAPI = PumpIORestAdapter.getApiInterface(retrofitHttpOAuthConsumer);
+            public void onNext(Login login) {
+                Intent intent = new Intent(getApplicationContext(), MainFeedActivity.class);
+                intent.setAction(Intent.ACTION_VIEW);
 
-                    Login login = pumpIORestAPI.mainLogin(nickName.getText().toString(), password.getText().toString());
-                    onCompleted();
-                }catch (Exception e) {
-                    onError(e);
-                }
+                startActivity(intent);
             }
-        };
-        retrofitObservable.subscribe(subscriber);
-
-
-        observTextfield();
+        });
     }
 
+    private Observable<RetrofitHttpOAuthConsumer> createRetrofitOAuthStream() {
+        Context context = getApplicationContext();
+        sharedPref = context.getSharedPreferences(
+                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-    private void observTextfield() {
-        Observable<OnTextChangeEvent> textNickName = ViewObservable.text(nickName);
-        Observable<OnTextChangeEvent> textPassword = ViewObservable.text(password);
+        final String clientId = sharedPref.getString(getString(R.string.client_id), "");
+        final String clientSecret = sharedPref.getString(getString(R.string.client_secret), "");
 
-        Observable.combineLatest(textNickName, textPassword, new Func2<OnTextChangeEvent, OnTextChangeEvent, Boolean>() {
+        if ("".equals(clientId)) {
+            Observable<OAuthConsumer> oAuthConsumerStream = OAuth.getOAuthConsumerStream();
+
+            // side effect, put to shared preferences
+            oAuthConsumerStream.doOnNext(new Action1<OAuthConsumer>() {
+                @Override
+                public void call(OAuthConsumer oAuthConsumer) {
+                    String clientId = oAuthConsumer.getConsumerKey();
+                    String clientSecret = oAuthConsumer.getConsumerSecret();
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(getString(R.string.client_id), clientId);
+                    editor.putString(getString(R.string.client_secret), clientSecret);
+                    editor.commit();
+                }
+            });
+
+            return oAuthConsumerStream.map(new Func1<OAuthConsumer, RetrofitHttpOAuthConsumer>() {
+                @Override
+                public RetrofitHttpOAuthConsumer call(OAuthConsumer oAuthConsumer) {
+                    RetrofitHttpOAuthConsumer retrofitHttpOAuthConsumer = new RetrofitHttpOAuthConsumer(
+                            oAuthConsumer.getConsumerKey(), oAuthConsumer.getConsumerSecret());
+                    retrofitHttpOAuthConsumer.setTokenWithSecret(null, null);
+
+                    return retrofitHttpOAuthConsumer;
+                }
+            });
+        } else {
+            return Observable.create(new Observable.OnSubscribe<RetrofitHttpOAuthConsumer>() {
+                @Override
+                public void call(Subscriber<? super RetrofitHttpOAuthConsumer> subscriber) {
+                    subscriber.onNext(new RetrofitHttpOAuthConsumer(clientId, clientSecret));
+                    subscriber.onCompleted();
+                }
+            });
+        }
+    }
+
+    private Observable<Boolean> createFormInputValidationStream() {
+        Observable<OnTextChangeEvent> textNickName = ViewObservable.text(nickName).startWith(new OnTextChangeEvent(nickName));
+        Observable<OnTextChangeEvent> textPassword = ViewObservable.text(password).startWith(new OnTextChangeEvent(password));
+
+        return Observable.combineLatest(textNickName, textPassword, new Func2<OnTextChangeEvent, OnTextChangeEvent, Boolean>() {
             @Override
             public Boolean call(OnTextChangeEvent onNickNameChangeEvent, OnTextChangeEvent onPasswordChangeEvent) {
                 String sNickName = onNickNameChangeEvent.text.toString();
                 String sPassword = onPasswordChangeEvent.text.toString();
 
-                return (sNickName.isEmpty() || sPassword.isEmpty()) ;
-            }
-        }).subscribe(new Action1<Boolean>() {
-            @Override
-            public void call(Boolean aBoolean) {
-                if(aBoolean) {
-                    button.setEnabled(false);
-                } else {
-                    button.setEnabled(true);
-                }
+                return !sNickName.isEmpty() && !sPassword.isEmpty();
             }
         });
+    }
 
+    private void handleButtonEnablement(Observable<Boolean> formInputValidationStream) {
+        formInputValidationStream.subscribe(new Action1<Boolean>() {
+            @Override
+            public void call(Boolean aBoolean) {
+                button.setEnabled(aBoolean);
+            }
+        });
     }
 
     @Override

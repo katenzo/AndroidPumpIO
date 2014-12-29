@@ -22,10 +22,14 @@ import retrofit.http.POST;
 import retrofit.http.Part;
 import retrofit.http.Path;
 import retrofit.mime.TypedFile;
+import rx.Observable;
 
 public interface PumpIORestAPI {
     @POST("/api/client/register")
     void registerClient(@Body RegisterApplication register, Callback<RegisterClient> registerClientResponseCallback);
+
+    @POST("/api/client/register")
+    Observable<RegisterClient> getRegisterClientStream(@Body RegisterApplication register);
 
     @POST("/api/client/register")
     RegisterClient getRegisterClient(@Body RegisterApplication register);
@@ -41,7 +45,7 @@ public interface PumpIORestAPI {
 
     @FormUrlEncoded
     @POST("/main/login")
-    Login mainLogin(@Field("nickname") String nickname, @Field("password") String password);
+    Observable<Login> mainLogin(@Field("nickname") String nickname, @Field("password") String password);
 
     @POST("/api/user/{nickname}/feed")
     PostResponse postNote(@Path("nickname") String nickname ,@Body PostNote postNote);
